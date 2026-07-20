@@ -210,8 +210,12 @@ namespace std {
  * This makes it possible to use memory locations as keys in hash maps.
  */
 template<>
-struct hash<nc::core::ir::MemoryLocation>: public unary_function<nc::core::ir::MemoryLocation, size_t> {
+struct hash<nc::core::ir::MemoryLocation> {
 public:
+    /* std::unary_function was removed in C++17; provide the typedefs it used to supply. */
+    typedef nc::core::ir::MemoryLocation argument_type;
+    typedef size_t result_type;
+
     result_type operator()(const argument_type &location) const {
         return hash_value(location.domain()) ^ hash_value(location.addr()) ^ hash_value(location.size());
     }

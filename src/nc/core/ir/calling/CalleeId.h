@@ -189,8 +189,12 @@ namespace std {
  * This makes it possible to use callee ids as keys in hash maps.
  */
 template<>
-struct hash<nc::core::ir::calling::CalleeId>: public unary_function<nc::core::ir::calling::CalleeId, size_t> {
+struct hash<nc::core::ir::calling::CalleeId> {
 public:
+    /* std::unary_function was removed in C++17; provide the typedefs it used to supply. */
+    typedef nc::core::ir::calling::CalleeId argument_type;
+    typedef size_t result_type;
+
     result_type operator()(const argument_type &value) const {
         using nc::core::ir::calling::CalleeId;
 
