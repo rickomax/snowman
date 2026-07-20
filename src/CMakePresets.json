@@ -1,0 +1,40 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default (system Boost, or auto-download)",
+            "description": "Uses Boost found on the system; if none is found the header-only Boost distribution is downloaded automatically. Qt is taken from the system.",
+            "binaryDir": "${sourceDir}/../build/default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "vcpkg",
+            "displayName": "vcpkg (fetch Boost via the vcpkg manifest)",
+            "description": "Installs the Boost dependencies listed in vcpkg.json through vcpkg. Requires the VCPKG_ROOT environment variable to point at a vcpkg checkout. Qt is taken from the system.",
+            "binaryDir": "${sourceDir}/../build/vcpkg",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "SNOWMAN_DOWNLOAD_BOOST": "OFF"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default"
+        },
+        {
+            "name": "vcpkg",
+            "configurePreset": "vcpkg"
+        }
+    ]
+}

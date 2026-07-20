@@ -25,6 +25,55 @@ built:
 For installation instructions for the above packages, please refer to
 the respective web pages and/or your operating system's manual.
 
+[[dependencies]]
+Obtaining the Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Boost is used *header-only*, so you do not need to compile it. You can
+provide the dependencies in any of the following ways.
+
+*System packages.* Install Boost and Qt through your operating system's
+package manager (e.g. `apt install libboost-dev qtbase5-dev`,
+`brew install boost qt`, ...) or the official installers. This is the
+recommended approach when Qt is involved, and Snowman finds them
+automatically.
+
+*Automatic Boost download (no setup).* If Boost is not found on the
+system, CMake downloads the header-only Boost distribution automatically
+at <<configuration_step,configuration step>> (see
+`modules/BoostDependency.cmake`). Relevant options:
+
+    * `-D SNOWMAN_DOWNLOAD_BOOST=OFF` — disable the automatic download and
+      require a system Boost instead.
+    * `-D SNOWMAN_BOOST_VERSION=1.87.0` — Boost version to download.
+    * `-D SNOWMAN_BOOST_URL=<url>` — download from a specific/mirror URL.
+    * `-D SNOWMAN_BOOST_URL_HASH=SHA256=<hex>` — pin the archive hash
+      (recommended; otherwise the download is verified by HTTPS only).
+
+Qt is *not* downloaded automatically (it is large and best installed as a
+binary package); install it as a system package as described above.
+
+*vcpkg.* A https://github.com/microsoft/vcpkg[vcpkg] manifest
+(`src/vcpkg.json`) lists the Boost dependencies. With `VCPKG_ROOT`
+pointing at a vcpkg checkout, configure with the bundled preset:
+
+------------------------------------------------------------------------
+cd src && cmake --preset vcpkg
+------------------------------------------------------------------------
+
+or pass the toolchain manually:
+
+------------------------------------------------------------------------
+cmake -S src -B build \
+      -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+------------------------------------------------------------------------
+
+*CMake presets.* `src/CMakePresets.json` provides ready-made
+configurations (run from the `src` directory):
+
+    * `cmake --preset default` — system Boost, or automatic download.
+    * `cmake --preset vcpkg` — fetch Boost through the vcpkg manifest.
+
 [NOTE]
 If you want to use Visual Studio 2012 to build applications that would
 run on Windows XP, you have to install Visual Studio 2012 Update 1 or

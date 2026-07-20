@@ -1,0 +1,23 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "snowman",
+    "description": "Native code to C/C++ decompiler (x86, AMD64, ARM).",
+    "homepage": "https://github.com/yegord/snowman",
+    "license": "GPL-3.0-or-later",
+    "dependencies": [
+        "boost-array",
+        "boost-config",
+        "boost-core",
+        "boost-exception",
+        "boost-function",
+        "boost-functional",
+        "boost-mpl",
+        "boost-optional",
+        "boost-preprocessor",
+        "boost-range",
+        "boost-static-assert",
+        "boost-type-traits",
+        "boost-unordered",
+        "boost-utility"
+    ]
+}

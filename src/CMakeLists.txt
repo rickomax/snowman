@@ -111,8 +111,9 @@ endif()
 # Add source dir to includes.
 include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/3rd-party)
 
-# Find Boost.
-find_package(Boost 1.46.0 REQUIRED)
+# Find Boost (downloading the header-only distribution automatically if it is
+# not installed on the system). See modules/BoostDependency.cmake.
+include(BoostDependency)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 # Choose which Qt version to look for.
@@ -196,7 +197,7 @@ if(${IDA_PLUGIN_ENABLED})
 endif()
 
 # Only build x64dbg when using MSVC (no support for other compilers in the SDK).
-if(${X64DBG_MODULE_ENABLED} AND ${MSVC})
+if(X64DBG_MODULE_ENABLED AND MSVC)
     add_subdirectory(x64dbg-module)
 endif()
 
