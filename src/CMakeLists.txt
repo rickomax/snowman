@@ -204,6 +204,14 @@ if(_nc_qt EQUAL 6)
     string(REPLACE "-std=c++11" "-std=c++17" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     string(REPLACE "-std=c++0x" "-std=c++17" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
+    if(MSVC)
+        # MSVC reports __cplusplus as 199711L unless told otherwise, even in
+        # C++17 mode. Boost (e.g. Boost.MPL) and Qt6 headers use __cplusplus for
+        # feature detection, so without this they take pre-C++11/pre-C++17 code
+        # paths and fail to compile. Apply only to C++ (not the vendored C).
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>)
+    endif()
+
     set(CMAKE_AUTOMOC ON)
 
     macro(qt4_wrap_cpp)
