@@ -94,21 +94,40 @@ else()
 
     include(FetchContent)
 
-    if(SNOWMAN_BOOST_URL_HASH)
-        FetchContent_Declare(boost URL "${_boost_url}" URL_HASH "${SNOWMAN_BOOST_URL_HASH}")
-    else()
+    if(NOT SNOWMAN_BOOST_URL_HASH)
         message(STATUS
             "Boost: no SNOWMAN_BOOST_URL_HASH set - the download is verified by HTTPS only. "
             "Set -DSNOWMAN_BOOST_URL_HASH=SHA256=<hex> to pin the archive.")
-        FetchContent_Declare(boost URL "${_boost_url}")
     endif()
 
-    # We only need the headers, so populate the archive without adding Boost's
-    # own build system (add_subdirectory) - that keeps configuration fast and
-    # avoids compiling any Boost libraries we do not use.
-    FetchContent_GetProperties(boost)
-    if(NOT boost_POPULATED)
-        FetchContent_Populate(boost)
+    # We only need the headers, not Boost's own build system.  Modern Boost
+    # release archives ship a CMakeLists.txt at their root; pointing
+    # SOURCE_SUBDIR at a directory that has no CMakeLists.txt makes FetchContent
+    # extract the archive without calling add_subdirectory() on it.  This keeps
+    # configuration fast and avoids compiling any Boost libraries.
+    if(SNOWMAN_BOOST_URL_HASH)
+        FetchContent_Declare(boost
+            URL "${_boost_url}"
+            URL_HASH "${SNOWMAN_BOOST_URL_HASH}"
+            SOURCE_SUBDIR "snowman-headers-only")
+    else()
+        FetchContent_Declare(boost
+            URL "${_boost_url}"
+            SOURCE_SUBDIR "snowman-headers-only")
+    endif()
+
+    if(CMAKE_VERSION VERSION_LESS 3.28)
+        # Older CMake: populate directly.  FetchContent_Populate is not
+        # deprecated on these versions (the deprecation arrived in CMake 3.30).
+        FetchContent_GetProperties(boost)
+        if(NOT boost_POPULATED)
+            FetchContent_Populate(boost)
+        endif()
+    else()
+        # Modern CMake: MakeAvailable only extracts here (thanks to the
+        # non-existent SOURCE_SUBDIR above) and avoids the now-deprecated
+        # direct FetchContent_Populate() call.
+        FetchContent_MakeAvailable(boost)
     endif()
 
     # In the official release archives the whole header tree lives directly

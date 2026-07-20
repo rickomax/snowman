@@ -51,7 +51,16 @@ at <<configuration_step,configuration step>> (see
       (recommended; otherwise the download is verified by HTTPS only).
 
 Qt is *not* downloaded automatically (it is large and best installed as a
-binary package); install it as a system package as described above.
+binary package); install it as a system package as described above. If Qt
+is installed but CMake does not find it, point CMake at it (Snowman also
+auto-detects Qt from a `qmake` found on the `PATH`):
+
+    * add Qt's `bin` directory to `PATH`, or
+    * `-D CMAKE_PREFIX_PATH=<qt-prefix>` (e.g. `C:/Qt/5.15.2/msvc2019_64`
+      or `$HOME/Qt/5.15.2/gcc_64`), or
+    * `-D Qt5_DIR=<directory containing Qt5Config.cmake>`.
+
+To build against Qt4 instead of Qt5, configure with `-D NC_QT5=OFF`.
 
 *vcpkg.* A https://github.com/microsoft/vcpkg[vcpkg] manifest
 (`src/vcpkg.json`) lists the Boost dependencies. With `VCPKG_ROOT`

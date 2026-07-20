@@ -116,23 +116,58 @@ include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/3rd-party)
 include(BoostDependency)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
-# Choose which Qt version to look for.
-if(NOT DEFINED NC_QT5)
-    find_package(Qt5Core)
+# If CMake was not told where Qt lives, try to discover it from a qmake on the
+# PATH. This makes the common "Qt is installed but its cmake config dir is not
+# on CMAKE_PREFIX_PATH" case work out of the box.
+if(NOT NC_QT5 AND NOT Qt5_DIR AND NOT Qt5Core_DIR AND NOT Qt6_DIR AND NOT DEFINED ENV{QTDIR})
+    find_program(NC_QMAKE_EXECUTABLE NAMES qmake qmake-qt5 qmake6)
+    if(NC_QMAKE_EXECUTABLE)
+        execute_process(
+            COMMAND "${NC_QMAKE_EXECUTABLE}" -query QT_INSTALL_PREFIX
+            OUTPUT_VARIABLE NC_QT_PREFIX
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE NC_QMAKE_RESULT)
+        if(NC_QMAKE_RESULT EQUAL 0 AND NC_QT_PREFIX)
+            message(STATUS "Qt: discovered installation at ${NC_QT_PREFIX} (via ${NC_QMAKE_EXECUTABLE}).")
+            list(APPEND CMAKE_PREFIX_PATH "${NC_QT_PREFIX}")
+        endif()
+    endif()
+endif()
 
+# Choose which Qt version to look for. Prefer Qt5; fall back to Qt4 only when
+# Qt4 is actually available, so that a missing/misconfigured Qt5 produces a
+# helpful Qt5 error rather than a confusing Qt4 one.
+if(NOT DEFINED NC_QT5)
     set(helpstring "Build using Qt5 rather than Qt4.")
-    if(Qt5Core_DIR)
+    find_package(Qt5Core QUIET)
+    if(Qt5Core_FOUND)
         set(NC_QT5 TRUE CACHE BOOL ${helpstring})
     else()
-        set(NC_QT5 FALSE CACHE BOOL ${helpstring})
+        find_package(Qt4 QUIET)
+        if(Qt4_FOUND OR QT4_FOUND)
+            set(NC_QT5 FALSE CACHE BOOL ${helpstring})
+        else()
+            set(NC_QT5 TRUE CACHE BOOL ${helpstring})
+        endif()
     endif()
     unset(helpstring)
 endif()
 
-if(${NC_QT5})
+if(NC_QT5)
     # Find Qt5.
-    find_package(Qt5Core REQUIRED)
-    find_package(Qt5Widgets REQUIRED)
+    find_package(Qt5Core QUIET)
+    find_package(Qt5Widgets QUIET)
+    if(NOT Qt5Core_FOUND OR NOT Qt5Widgets_FOUND)
+        message(FATAL_ERROR
+            "Qt5 (Core and Widgets) was not found, and Snowman needs Qt to build.\n"
+            "Point CMake at your Qt installation in one of these ways:\n"
+            "  * add Qt's bin directory to PATH (so qmake can be found), or\n"
+            "  * -DCMAKE_PREFIX_PATH=<qt-prefix>   e.g. C:/Qt/5.15.2/msvc2019_64\n"
+            "                                      or  $HOME/Qt/5.15.2/gcc_64, or\n"
+            "  * -DQt5_DIR=<dir containing Qt5Config.cmake>.\n"
+            "To build against Qt4 instead, configure with -DNC_QT5=OFF.\n"
+            "See doc/build.asciidoc, section \"Obtaining the Dependencies\".")
+    endif()
 
     set(CMAKE_AUTOMOC ON)
 
@@ -143,7 +178,14 @@ if(${NC_QT5})
     set(NC_QT_WIDGETS Qt5::Widgets)
 else()
     # Find Qt4.
-    find_package(Qt4 REQUIRED QtCore QtGui)
+    find_package(Qt4 QUIET QtCore QtGui)
+    if(NOT QT4_FOUND AND NOT Qt4_FOUND)
+        message(FATAL_ERROR
+            "Qt4 was not found (NC_QT5=OFF was requested or Qt5 was unavailable).\n"
+            "Install Qt4 and point CMake at it via CMAKE_PREFIX_PATH, or build\n"
+            "against Qt5 by configuring with -DNC_QT5=ON and a Qt5 installation.\n"
+            "See doc/build.asciidoc, section \"Obtaining the Dependencies\".")
+    endif()
     include(${QT_USE_FILE})
 
     # Too lazy to filter the right libraries from ${QT_LIBRARIES}.
