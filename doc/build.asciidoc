@@ -20,7 +20,7 @@ built:
 
     * http://cmake.org/[CMake] >= 3.7
     * http://www.boost.org/[Boost] >= 1.49 (headers only)
-    * http://qt-project.org/[Qt] >= 4.7
+    * http://qt-project.org/[Qt] >= 4.7 (Qt4, Qt5 and Qt6 are supported)
 
 For installation instructions for the above packages, please refer to
 the respective web pages and/or your operating system's manual.
@@ -60,7 +60,10 @@ auto-detects Qt from a `qmake` found on the `PATH`):
       or `$HOME/Qt/5.15.2/gcc_64`), or
     * `-D Qt5_DIR=<directory containing Qt5Config.cmake>`.
 
-To build against Qt4 instead of Qt5, configure with `-D NC_QT5=OFF`.
+Snowman auto-detects Qt, preferring Qt6, then Qt5, then Qt4. Force a
+specific major version with `-D NC_QT_VERSION=6` (or `5`, or `4`). Qt6
+requires a C++17 compiler, which Snowman selects automatically when Qt6 is
+used.
 
 *vcpkg.* A https://github.com/microsoft/vcpkg[vcpkg] manifest
 (`src/vcpkg.json`) lists the Boost dependencies. With `VCPKG_ROOT`
@@ -202,9 +205,13 @@ You can choose to build 32-bit code on 64-bit Linux machine:
 
     * `-D NC_M32=YES`.
 
-You can choose between Qt5 and Qt4:
+You can choose which major version of Qt to build against (by default the
+newest available is used, preferring Qt6, then Qt5, then Qt4):
 
-    * `-D NC_QT5=YES` (`YES` for Qt5, `NO` for Qt4).
+    * `-D NC_QT_VERSION=6` (or `5`, or `4`).
+
+The legacy `-D NC_QT5=YES` (`YES` for Qt5, `NO` for Qt4) is still honoured
+when `NC_QT_VERSION` is not set.
 
 You can set the installation prefix:
 

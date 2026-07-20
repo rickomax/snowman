@@ -23,6 +23,7 @@
 //
 
 #include "BasicNode.h"
+#include <nc/common/QtCompat.h>
 
 #include <QTextStream>
 

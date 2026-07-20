@@ -145,14 +145,14 @@ CppSyntaxHighlighter::CppSyntaxHighlighter(QObject *parent, const CxxFormatting 
         mKeywords.insert(cppKeyword);
 
     /* Init regexps. */
-    mNumberRegexp   = QRegExp("\\b([0-9]+|0[xX][0-9a-fA-F]+|0[0-7]+)(\\.[0-9]+)?([eE][0-9]+)?\\b");
-    mOperatorRegexp = QRegExp("[\\(\\)\\[\\]{}\\:;,\\.!\\?/\\*\\-+<>%^&\\|=~]");
-    mTextRegexp     = QRegExp("\\b[a-zA-Z_][a-zA-Z0-9_]+\\b");
+    mNumberRegexp   = CppRegExp("\\b([0-9]+|0[xX][0-9a-fA-F]+|0[0-7]+)(\\.[0-9]+)?([eE][0-9]+)?\\b");
+    mOperatorRegexp = CppRegExp("[\\(\\)\\[\\]{}\\:;,\\.!\\?/\\*\\-+<>%^&\\|=~]");
+    mTextRegexp     = CppRegExp("\\b[a-zA-Z_][a-zA-Z0-9_]+\\b");
 
-    mIncludeRegexp  = QRegExp("^\\s*#\\s*include\\s*(<.+>|\\\".+\\\")");
-    mMacroRegexp    = QRegExp("^\\s*#.*$"); 
-    mMultilineMacroRegexp = QRegExp("^\\s*#\\s*(define|if|elif|pragma|warning|error)"); 
-    mSpecialRegexp  = QRegExp("//|\\\"|'|/\\*");
+    mIncludeRegexp  = CppRegExp("^\\s*#\\s*include\\s*(<.+>|\\\".+\\\")");
+    mMacroRegexp    = CppRegExp("^\\s*#.*$"); 
+    mMultilineMacroRegexp = CppRegExp("^\\s*#\\s*(define|if|elif|pragma|warning|error)"); 
+    mSpecialRegexp  = CppRegExp("//|\\\"|'|/\\*");
 }
 
 CppSyntaxHighlighter::~CppSyntaxHighlighter() {
@@ -177,11 +177,20 @@ void CppSyntaxHighlighter::highlightBlock(const QString &text) {
     /* Highlight strings, comments... */
     startPos = endPos;
     while (true) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QRegularExpressionMatch specialMatch;
+        startPos = text.indexOf(mSpecialRegexp, startPos, &specialMatch);
+        if (startPos == -1)
+            break;
+
+        QString cap = specialMatch.captured();
+#else
         startPos = text.indexOf(mSpecialRegexp, startPos);
         if (startPos == -1)
             break;
 
         QString cap = mSpecialRegexp.cap();
+#endif
         if (cap == "//") {
             setFormat(startPos, text.length() - startPos, formatting_->getFormat(CxxFormatting::SINGLE_LINE_COMMENT));
             if (text.endsWith("\\"))
@@ -269,11 +278,22 @@ bool CppSyntaxHighlighter::processState(const QString &text, int *const startPos
     return false;
 }
 
-void CppSyntaxHighlighter::processRegexp(QRegExp &regexp, CxxFormatting::Element element, const QString &text, int startPos) {
+void CppSyntaxHighlighter::processRegexp(CppRegExp &regexp, CxxFormatting::Element element, const QString &text, int startPos) {
     int index = 0;
     int start = startPos;
 
     while(true) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QRegularExpressionMatch match;
+        index = text.indexOf(regexp, start, &match);
+        if (index == -1)
+            break;
+        int length = match.capturedLength();
+        assert(length != 0);
+
+        start = index + length;
+        QString cap = match.captured();
+#else
         index = text.indexOf(regexp, start);
         if (index == -1)
             break;
@@ -282,6 +302,7 @@ void CppSyntaxHighlighter::processRegexp(QRegExp &regexp, CxxFormatting::Element
 
         start = index + length;
         QString cap = regexp.cap();
+#endif
 
         setFormat(index, length, formatting_->getFormat(element));
         if (element == CxxFormatting::TEXT && mKeywords.contains(cap))
@@ -337,9 +358,16 @@ bool CppSyntaxHighlighter::processPreprocessor(const QString &text) {
     } else if (text.indexOf(mIncludeRegexp) != -1) {
         /* TODO: we can highlight it in a different format */
         setFormat(0, text.length(), formatting_->getFormat(CxxFormatting::MACRO));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QRegularExpressionMatch includeMatch = mIncludeRegexp.match(text);
+        int pos = includeMatch.capturedStart(1);
+        if (pos > 0)
+            setFormat(pos, includeMatch.captured(1).size(), formatting_->getFormat(CxxFormatting::STRING));
+#else
         int pos = mIncludeRegexp.pos(1);
         if (pos > 0)
             setFormat(pos, mIncludeRegexp.cap(1).size(), formatting_->getFormat(CxxFormatting::STRING));
+#endif
     } else if (text.indexOf(mMacroRegexp) != -1) {
         setFormat(0, text.length(), formatting_->getFormat(CxxFormatting::MACRO));
         return false;

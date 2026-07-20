@@ -30,12 +30,24 @@
 #include <QSyntaxHighlighter>
 #include <QSet>
 #include <QWidget>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
 
 QT_BEGIN_NAMESPACE
 class QTextDocument;
 QT_END_NAMESPACE
 
 namespace nc { namespace gui {
+
+/* Qt6 removed QRegExp; QRegularExpression covers Qt5 and Qt6. */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+typedef QRegularExpression CppRegExp;
+#else
+typedef QRegExp CppRegExp;
+#endif
 
 /**
  * An object storing the formatting information used for C++ highlighting. It
@@ -143,7 +155,7 @@ protected:
 private:
     bool processState(const QString &text, int *startPos, int *endPos);
 
-    void processRegexp(QRegExp &regexp, CxxFormatting::Element element, const QString &text, int startPos = 0);
+    void processRegexp(CppRegExp &regexp, CxxFormatting::Element element, const QString &text, int startPos = 0);
 
     void processRegexps(const QString &text, int startPos = 0);
 
@@ -159,13 +171,13 @@ private:
     QSet<QString> mKeywords;
 
     /* Regular expressions. */
-    QRegExp mIncludeRegexp;
-    QRegExp mMacroRegexp;
-    QRegExp mMultilineMacroRegexp;
-    QRegExp mSpecialRegexp;
-    QRegExp mNumberRegexp;
-    QRegExp mOperatorRegexp;
-    QRegExp mTextRegexp;
+    CppRegExp mIncludeRegexp;
+    CppRegExp mMacroRegexp;
+    CppRegExp mMultilineMacroRegexp;
+    CppRegExp mSpecialRegexp;
+    CppRegExp mNumberRegexp;
+    CppRegExp mOperatorRegexp;
+    CppRegExp mTextRegexp;
 
     const CxxFormatting *formatting_;
 };

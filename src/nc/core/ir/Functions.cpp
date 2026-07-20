@@ -23,6 +23,7 @@
 //
 
 #include "Functions.h"
+#include <nc/common/QtCompat.h>
 
 #include <QTextStream>
 

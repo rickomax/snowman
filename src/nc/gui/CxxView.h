@@ -31,6 +31,15 @@
 
 #include "TextView.h"
 
+/*
+ * Qt6's moc requires complete types for the classes used in signal/slot
+ * parameters (here std::vector<const TreeNode *> and
+ * std::vector<const Instruction *>), so include their full definitions
+ * rather than only forward-declaring them.
+ */
+#include <nc/core/arch/Instruction.h>
+#include <nc/core/likec/TreeNode.h>
+
 namespace nc {
 
 namespace core {

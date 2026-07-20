@@ -24,6 +24,8 @@
 
 #include "TreeView.h"
 
+#include <algorithm>
+
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
@@ -146,7 +148,7 @@ void TreeView::copy() {
         return;
     }
 
-    qSort(indexes.begin(), indexes.end(), [](const QModelIndex &a, const QModelIndex &b) -> bool {
+    std::sort(indexes.begin(), indexes.end(), [](const QModelIndex &a, const QModelIndex &b) -> bool {
         if (a.parent() == b.parent()) {
             return a.row() < b.row() || (a.row() == b.row() && a.column() < b.column());
         } else {
@@ -199,11 +201,16 @@ bool TreeView::eventFilter(QObject *watched, QEvent *event) {
         if (event->type() == QEvent::Wheel) {
             auto wheelEvent = static_cast<QWheelEvent *>(event);
 
-            if (wheelEvent->orientation() == Qt::Vertical && wheelEvent->modifiers() & Qt::ControlModifier) {
-                if (wheelEvent->delta() > 0) {
-                    zoomIn(1 + wheelEvent->delta() / 360);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+            int delta = wheelEvent->angleDelta().y();
+#else
+            int delta = wheelEvent->orientation() == Qt::Vertical ? wheelEvent->delta() : 0;
+#endif
+            if (delta != 0 && (wheelEvent->modifiers() & Qt::ControlModifier)) {
+                if (delta > 0) {
+                    zoomIn(1 + delta / 360);
                 } else {
-                    zoomOut(1 - wheelEvent->delta() / 360);
+                    zoomOut(1 - delta / 360);
                 }
                 return true;
             }

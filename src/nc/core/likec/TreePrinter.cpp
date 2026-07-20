@@ -2,6 +2,7 @@
 /* See doc/licenses.asciidoc for the licensing information. */
 
 #include "TreePrinter.h"
+#include <nc/common/QtCompat.h>
 
 #include <QStringList>
 

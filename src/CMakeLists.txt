@@ -134,39 +134,90 @@ if(NOT NC_QT5 AND NOT Qt5_DIR AND NOT Qt5Core_DIR AND NOT Qt6_DIR AND NOT DEFINE
     endif()
 endif()
 
-# Choose which Qt version to look for. Prefer Qt5; fall back to Qt4 only when
-# Qt4 is actually available, so that a missing/misconfigured Qt5 produces a
-# helpful Qt5 error rather than a confusing Qt4 one.
-if(NOT DEFINED NC_QT5)
-    set(helpstring "Build using Qt5 rather than Qt4.")
-    find_package(Qt5Core QUIET)
-    if(Qt5Core_FOUND)
-        set(NC_QT5 TRUE CACHE BOOL ${helpstring})
+# Choose which major Qt version to build against.
+#
+# By default Snowman auto-detects Qt, preferring Qt6, then Qt5, then Qt4.
+# You can force a specific major version with NC_QT_VERSION (4, 5, or 6).
+# For backward compatibility the boolean NC_QT5 still works too:
+#   -DNC_QT5=ON -> Qt5, -DNC_QT5=OFF -> Qt4 (ignored if NC_QT_VERSION is set).
+set(NC_QT_VERSION "" CACHE STRING "Qt major version to use (4, 5, 6, or empty to auto-detect).")
+
+if(NC_QT_VERSION)
+    set(_nc_qt "${NC_QT_VERSION}")
+elseif(DEFINED NC_QT5)
+    if(NC_QT5)
+        set(_nc_qt 5)
     else()
-        find_package(Qt4 QUIET)
-        if(Qt4_FOUND OR QT4_FOUND)
-            set(NC_QT5 FALSE CACHE BOOL ${helpstring})
+        set(_nc_qt 4)
+    endif()
+else()
+    # Auto-detect, newest first.
+    find_package(Qt6 COMPONENTS Core Widgets QUIET)
+    if(Qt6_FOUND)
+        set(_nc_qt 6)
+    else()
+        find_package(Qt5 COMPONENTS Core Widgets QUIET)
+        if(Qt5_FOUND)
+            set(_nc_qt 5)
         else()
-            set(NC_QT5 TRUE CACHE BOOL ${helpstring})
+            find_package(Qt4 QUIET)
+            if(Qt4_FOUND OR QT4_FOUND)
+                set(_nc_qt 4)
+            else()
+                # Nothing found: default to Qt6 so the check below emits a clear,
+                # modern error message.
+                set(_nc_qt 6)
+            endif()
         endif()
     endif()
-    unset(helpstring)
 endif()
 
-if(NC_QT5)
+# NC_QT5 is consumed by nocode/ and snowman/ (Windows Qt4 bundling). Set it as a
+# plain variable that propagates to the sub-projects: true for Qt5 and Qt6,
+# false for Qt4. It is intentionally not cached, so it never overrides the
+# auto-detection above on a re-configure.
+if(_nc_qt EQUAL 4)
+    set(NC_QT5 FALSE)
+else()
+    set(NC_QT5 TRUE)
+endif()
+
+set(NC_QT_HELP
+    "Point CMake at your Qt installation in one of these ways:\n"
+    "  * add Qt's bin directory to PATH (so qmake can be found), or\n"
+    "  * -DCMAKE_PREFIX_PATH=<qt-prefix>   e.g. C:/Qt/6.11.1/msvc2022_64\n"
+    "                                      or  $HOME/Qt/6.7.0/gcc_64, or\n"
+    "  * -DQt6_DIR/-DQt5_DIR=<dir containing Qt6Config.cmake/Qt5Config.cmake>.\n"
+    "Force a specific Qt with -DNC_QT_VERSION=6 (or 5, or 4).\n"
+    "See doc/build.asciidoc, section \"Obtaining the Dependencies\".")
+
+if(_nc_qt EQUAL 6)
+    # Find Qt6.
+    find_package(Qt6 COMPONENTS Core Widgets QUIET)
+    if(NOT Qt6_FOUND)
+        message(FATAL_ERROR "Qt6 (Core and Widgets) was not found, and Snowman needs Qt to build.\n" ${NC_QT_HELP})
+    endif()
+
+    # Qt6 requires C++17.
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    string(REPLACE "-std=c++11" "-std=c++17" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    string(REPLACE "-std=c++0x" "-std=c++17" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+    set(CMAKE_AUTOMOC ON)
+
+    macro(qt4_wrap_cpp)
+    endmacro()
+
+    set(NC_QT_CORE Qt6::Core)
+    set(NC_QT_WIDGETS Qt6::Widgets)
+    message(STATUS "Qt: building against Qt6 (${Qt6_VERSION}).")
+elseif(_nc_qt EQUAL 5)
     # Find Qt5.
     find_package(Qt5Core QUIET)
     find_package(Qt5Widgets QUIET)
     if(NOT Qt5Core_FOUND OR NOT Qt5Widgets_FOUND)
-        message(FATAL_ERROR
-            "Qt5 (Core and Widgets) was not found, and Snowman needs Qt to build.\n"
-            "Point CMake at your Qt installation in one of these ways:\n"
-            "  * add Qt's bin directory to PATH (so qmake can be found), or\n"
-            "  * -DCMAKE_PREFIX_PATH=<qt-prefix>   e.g. C:/Qt/5.15.2/msvc2019_64\n"
-            "                                      or  $HOME/Qt/5.15.2/gcc_64, or\n"
-            "  * -DQt5_DIR=<dir containing Qt5Config.cmake>.\n"
-            "To build against Qt4 instead, configure with -DNC_QT5=OFF.\n"
-            "See doc/build.asciidoc, section \"Obtaining the Dependencies\".")
+        message(FATAL_ERROR "Qt5 (Core and Widgets) was not found, and Snowman needs Qt to build.\n" ${NC_QT_HELP})
     endif()
 
     set(CMAKE_AUTOMOC ON)
@@ -176,15 +227,12 @@ if(NC_QT5)
 
     set(NC_QT_CORE Qt5::Core)
     set(NC_QT_WIDGETS Qt5::Widgets)
+    message(STATUS "Qt: building against Qt5 (${Qt5Core_VERSION}).")
 else()
     # Find Qt4.
     find_package(Qt4 QUIET QtCore QtGui)
     if(NOT QT4_FOUND AND NOT Qt4_FOUND)
-        message(FATAL_ERROR
-            "Qt4 was not found (NC_QT5=OFF was requested or Qt5 was unavailable).\n"
-            "Install Qt4 and point CMake at it via CMAKE_PREFIX_PATH, or build\n"
-            "against Qt5 by configuring with -DNC_QT5=ON and a Qt5 installation.\n"
-            "See doc/build.asciidoc, section \"Obtaining the Dependencies\".")
+        message(FATAL_ERROR "Qt4 was not found (Qt4 was requested or no newer Qt was available).\n" ${NC_QT_HELP})
     endif()
     include(${QT_USE_FILE})
 
@@ -194,6 +242,7 @@ else()
 
     # This is used to produce standalone bundles on Windows.
     include(DeployQt4)
+    message(STATUS "Qt: building against Qt4.")
 endif()
 
 if(QT_NAMESPACE)

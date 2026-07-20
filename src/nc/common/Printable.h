@@ -25,6 +25,7 @@
 
 #include <nc/config.h>
 
+#include <QString>
 #include <QTextStream>
 
 namespace nc {

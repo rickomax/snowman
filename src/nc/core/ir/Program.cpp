@@ -23,6 +23,7 @@
 //
 
 #include "Program.h"
+#include <nc/common/QtCompat.h>
 
 #include <algorithm> /* std::find_if */
 #include <cassert>

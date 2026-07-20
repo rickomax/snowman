@@ -29,6 +29,13 @@
 #include <QFormLayout>
 #include <QLineEdit>
 #include <QMessageBox>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
+#else
+#include <QRegExp>
+#include <QRegExpValidator>
+#endif
 
 #include <nc/common/Foreach.h>
 #include <nc/common/StringToInt.h>
@@ -52,7 +59,11 @@ DisassemblyDialog::DisassemblyDialog(QWidget *parent):
 
     sectionComboBox_ = new QComboBox(this);
 
-    QRegExpValidator *hexValidator = new QRegExpValidator(QRegExp("[0123456789abcdef]+"), this);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    auto *hexValidator = new QRegularExpressionValidator(QRegularExpression("[0123456789abcdef]+"), this);
+#else
+    auto *hexValidator = new QRegExpValidator(QRegExp("[0123456789abcdef]+"), this);
+#endif
 
     startLineEdit_ = new QLineEdit(this);
     startLineEdit_->setValidator(hexValidator);

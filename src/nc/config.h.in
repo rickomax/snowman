@@ -71,6 +71,9 @@
 #  if _MSC_VER >= 1800
 #    define NC_HAVE_STD_MAKE_UNIQUE
 #  endif
+#elif defined(__cplusplus) && __cplusplus >= 201402L
+/* std::make_unique is part of C++14 and later (e.g. required by Qt6's C++17). */
+#  define NC_HAVE_STD_MAKE_UNIQUE
 #endif
 
 /* Range-based for. */

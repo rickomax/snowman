@@ -23,6 +23,7 @@
 //
 
 #include "CFG.h"
+#include <nc/common/QtCompat.h>
 
 #include <QTextStream>
 

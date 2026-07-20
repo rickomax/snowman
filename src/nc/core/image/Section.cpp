@@ -47,12 +47,12 @@ ByteSize Section::readBytes(ByteAddr addr, void *buf, ByteSize size) const {
     if (externalByteSource()) {
         return externalByteSource()->readBytes(addr, buf, size);
     } else {
-        auto copiedSize = std::min(size, content_.size() - offset);
+        auto copiedSize = std::min(size, static_cast<ByteSize>(content_.size()) - offset);
         if (copiedSize > 0) {
             memcpy(buf, content_.constData() + offset, copiedSize);
         }
 
-        auto zeroedSize = std::min(size, offset + size - content_.size());
+        auto zeroedSize = std::min(size, offset + size - static_cast<ByteSize>(content_.size()));
         if (zeroedSize > 0) {
             memset(static_cast<char *>(buf) + size - zeroedSize, 0, zeroedSize);
         }

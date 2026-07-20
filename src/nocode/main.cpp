@@ -23,6 +23,7 @@
 //
 
 #include <nc/config.h>
+#include <nc/common/QtCompat.h>
 
 #include <nc/common/Branding.h>
 #include <nc/common/Exception.h>

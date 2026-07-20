@@ -28,6 +28,11 @@
 
 #include <QScrollBar>
 #include <QTreeView>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
 
 #include <nc/common/Foreach.h>
 
@@ -100,7 +105,14 @@ bool match(const QModelIndex &index, const QString &expression, Searcher::FindFl
     auto data = index.data().toString();
 
     if (flags & Searcher::FindRegexp) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QRegularExpression re(expression,
+            caseSensitivity == Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption
+                                                   : QRegularExpression::NoPatternOption);
+        return data.contains(re);
+#else
         return data.contains(QRegExp(expression, caseSensitivity));
+#endif
     } else {
         return data.contains(expression, caseSensitivity);
     }
